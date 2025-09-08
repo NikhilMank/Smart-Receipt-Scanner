@@ -55,15 +55,6 @@ The solution is implemented using **AWS serverless services** to ensure scalabil
   - Spending by category
 - Demo workflow: *Upload → Extract → Store → Edit → Analyze*
 
----
-
-## 🗓️ Timeline
-- **Week 1:** Core workflow (upload → OCR → DynamoDB).  
-- **Week 2:** Frontend integration (view + edit receipts).  
-- **Week 3:** Categories + QuickSight analytics + polish.  
-
----
-
 ## 🚀 Stretch Goals
 - Add login/authentication with **Amazon Cognito**.  
 - Email/SMS notifications when a new receipt is processed (via **Amazon SNS**).  
