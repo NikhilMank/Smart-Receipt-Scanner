@@ -25,7 +25,6 @@ The solution is implemented using **AWS serverless services** to ensure scalabil
 | AWS Service              | Purpose |
 |--------------------------|---------|
 | **Amazon S3**            | Store uploaded receipt images. |
-| **Amazon Textract**      | Perform OCR to extract text from receipts. |
 | **AWS Lambda**           | Serverless backend logic (parsing, categorization, data storage). |
 | **Amazon DynamoDB**      | Store structured receipt data (NoSQL). |
 | **Amazon API Gateway**   | Provide REST APIs for frontend integration. |
@@ -38,6 +37,8 @@ The solution is implemented using **AWS serverless services** to ensure scalabil
 
 ## 🖥️ Other Tools
 - **Frontend:** HTML/CSS/JavaScript (or React) for upload & dashboard UI.  
+- **Tesseract OCR:** For text extraction from receipt images.  
+- **Python:** For AWS Lambda functions.
 - **Regex / Rule-based Parsing:** To improve field extraction (store, date, total).  
 - **GitHub:** Version control and documentation.  
 
@@ -48,7 +49,7 @@ The solution is implemented using **AWS serverless services** to ensure scalabil
   - Upload receipts
   - View structured receipt data
   - Edit incorrect fields
-- Automatic categorization of expenses.
+- Automatic categorization of expenses incase the user does not provide one.
 - QuickSight dashboards with:
   - Spending by month
   - Spending by store
