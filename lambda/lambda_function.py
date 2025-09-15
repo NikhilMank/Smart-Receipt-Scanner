@@ -12,8 +12,10 @@ from PIL import Image
 import pytesseract
 from pdf2image import convert_from_bytes
 
-# Set tesseract path for Lambda
-pytesseract.pytesseract.tesseract_cmd = '/var/task/python/usr/bin/tesseract'
+# Set tesseract path for custom minimal layer
+os.environ['LD_LIBRARY_PATH'] = '/opt/python/lib'
+os.environ['TESSDATA_PREFIX'] = '/opt/python/share/tessdata/'
+pytesseract.pytesseract.tesseract_cmd = '/opt/python/bin/tesseract'
 
 s3 = boto3.client("s3")
 dynamodb = boto3.resource("dynamodb")
@@ -44,7 +46,18 @@ def lambda_handler(event, context):
         else:
             print("Processing image...")
             img = Image.open(io.BytesIO(file_bytes))
-            text_output = pytesseract.image_to_string(img)
+            
+            # Resize large images to speed up OCR
+            if img.width > 2000 or img.height > 2000:
+                print("Resizing large image...")
+                img.thumbnail((2000, 2000), Image.Resampling.LANCZOS)
+            
+            print(f"Image size: {img.width}x{img.height}")
+            
+            # Simple OCR without complex config
+            print("Running tesseract...")
+            text_output = pytesseract.image_to_string(img, timeout=60)
+            print("Tesseract completed successfully")
         
         print(f"OCR completed. Text length: {len(text_output)}")
         print("Extracted text:", text_output[:200] + "..." if len(text_output) > 200 else text_output)
