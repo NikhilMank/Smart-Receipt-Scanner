@@ -116,7 +116,7 @@ def lambda_handler(event, context):
         if key.lower().endswith(".pdf"):
             print("Processing PDF...")
             pages = convert_from_bytes(file_bytes)
-            text_output = "\n".join([pytesseract.image_to_string(page) for page in pages])
+            text_output = "\n".join([pytesseract.image_to_string(page, lang='deu+eng') for page in pages])
         else:
             print("Processing image...")
             img = Image.open(io.BytesIO(file_bytes))
@@ -124,8 +124,9 @@ def lambda_handler(event, context):
                 print("Resizing large image...")
                 img.thumbnail((2000, 2000), Image.Resampling.LANCZOS)
             print(f"Image size: {img.width}x{img.height}")
-            print("Running tesseract...")
-            text_output = pytesseract.image_to_string(img, timeout=60)
+            print("Running tesseract with German language support...")
+            # Use German + English for better accuracy on German receipts
+            text_output = pytesseract.image_to_string(img, lang='deu+eng', timeout=60)
             print("Tesseract completed successfully")
 
         print(f"OCR completed. Text length: {len(text_output)}")

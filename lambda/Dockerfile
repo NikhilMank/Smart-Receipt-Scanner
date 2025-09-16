@@ -24,10 +24,11 @@ RUN cd /tmp && \
     PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./configure --prefix=/usr/local && \
     make && make install
 
-# Download English language data
+# Download English and German language data
 RUN mkdir -p /usr/local/share/tessdata && \
     cd /usr/local/share/tessdata && \
-    wget https://github.com/tesseract-ocr/tessdata/raw/main/eng.traineddata
+    wget https://github.com/tesseract-ocr/tessdata/raw/main/eng.traineddata && \
+    wget https://github.com/tesseract-ocr/tessdata/raw/main/deu.traineddata
 
 # Set library path
 ENV LD_LIBRARY_PATH=/usr/local/lib
