@@ -1,8 +1,8 @@
-"""
-A bash script to build and deploy the docker image to AWS ECR
-and update the lambda function to use the new image.
-"""
 #!/bin/bash
+#
+# A bash script to build and deploy the docker image to AWS ECR
+# and update the lambda function to use the new image.
+#
 
 # Set the AWS region
 AWS_REGION="eu-central-1"
@@ -26,7 +26,7 @@ docker build -t $AWS_ECR_REPO_NAME .
 # Tag and Push the image to ECR
 IMAGE_TAG="latest"
 docker tag $AWS_ECR_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_ECR_REPO_NAME:$IMAGE_TAG
-docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_ECR_REPO_NAME:$IMAGE
+docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_ECR_REPO_NAME:$IMAGE_TAG
 
 # Update the Lambda function to use the new image
 aws lambda update-function-code \
