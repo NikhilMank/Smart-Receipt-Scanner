@@ -16,45 +16,81 @@ table = dynamodb.Table("Receipts")
 
 # --- NEW: simple field extractor ---------------------------------
 def extract_fields(text: str) -> dict:
-    """Return merchant, purchase_date, and total_amount from OCR text."""
+    """Return merchant, purchase_date, purchase_time, and total_amount from OCR text."""
 
-    # Merchant: first non-empty line without a long digit run
+    # Merchant: look for company name patterns
     merchant = ""
-    for line in (l.strip() for l in text.splitlines() if l.strip()):
-        if re.search(r"[A-Za-z]", line) and not re.search(r"\d{5,}", line):
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    for line in lines:
+        # Skip lines with too many numbers, but allow some
+        if (re.search(r"[A-Za-z]{3,}", line) and 
+            not re.search(r"\d{5,}", line) and
+            not re.search(r"(?:Tel|UID|Datum|Uhrzeit)", line, re.IGNORECASE)):
             merchant = line
             break
 
-    # Date: common patterns (2025-09-15, 15/09/2025, Sep 15 2025…)
+    # Date: German format patterns (DD.MM.YYYY)
     date_patterns = [
-        r"\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b",
-        r"\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b",
-        r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[ .-]?\d{1,2}[, ]+\d{4}\b",
+        r"(?:Datum|Date)\s*[:\-]?\s*(\d{1,2}\.\d{1,2}\.\d{4})",  # Datum: 16.08.2025
+        r"\b(\d{1,2}\.\d{1,2}\.\d{4})\b",  # 16.08.2025
+        r"\b(\d{4}-\d{1,2}-\d{1,2})\b",  # 2025-08-16
+        r"TSE-Start:\s*(\d{4}-\d{2}-\d{2})",  # TSE-Start: 2025-08-16
     ]
-    found_date = next((m.group(0) for p in date_patterns
-                       for m in [re.search(p, text, re.IGNORECASE)] if m), "")
+    found_date = ""
+    for pattern in date_patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            found_date = match.group(1)
+            break
 
     # Try to normalize to ISO YYYY-MM-DD
     parsed_date = ""
-    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y", "%d-%m-%Y",
-                "%d/%m/%y", "%d-%m-%y"):
-        try:
-            parsed_date = datetime.strptime(found_date, fmt).date().isoformat()
-            break
-        except Exception:
-            pass
+    if found_date:
+        date_formats = [
+            "%d.%m.%Y",  # German format
+            "%Y-%m-%d",  # ISO format
+        ]
+        for fmt in date_formats:
+            try:
+                parsed_date = datetime.strptime(found_date, fmt).date().isoformat()
+                break
+            except Exception:
+                pass
     if not parsed_date:
-        parsed_date = found_date  # keep raw if parsing fails
+        parsed_date = found_date
 
-    # Total amount: look for "Total", "Amount", etc.
-    amt_match = re.search(
-        r"(?:Total|Amount|Grand|Balance)\s*[:\-]?\s*([$€£]?\s?\d+[.,]?\d{0,2})",
-        text, re.IGNORECASE)
-    total_amount = amt_match.group(1).replace(" ", "") if amt_match else ""
+    # Time: German format patterns
+    time_patterns = [
+        r"(?:Uhrzeit|Zeit)\s*[:\-]?\s*(\d{1,2}:\d{2}(?::\d{2})?)",  # Uhrzeit: 11:42:11
+        r"AS-Zeit\s+\d{2}\.\d{2}\.\s+(\d{1,2}:\d{2})",  # AS-Zeit 16.08. 11:42
+        r"\b(\d{1,2}:\d{2}(?::\d{2})?)\s+Uhr\b",  # 11:42:11 Uhr
+    ]
+    found_time = ""
+    for pattern in time_patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            found_time = match.group(1)
+            break
+
+    # Total amount: German receipt patterns
+    amt_patterns = [
+        r"SUMME\s+EUR\s+(\d+,\d{2})",  # SUMME EUR 4,56
+        r"Betrag\s+EUR\s+(\d+,\d{2})",  # Betrag EUR 4,56
+        r"Gesamtbetrag\s+[\d,]+\s+[\d,]+\s+(\d+,\d{2})",  # Gesamtbetrag line
+        r"(?:Total|Gesamt)\s*[:\-]?\s*EUR?\s*(\d+,\d{2})",  # Total EUR 4,56
+        r"EUR\s+(\d+,\d{2})(?:\s|$)",  # EUR 4,56 at end
+    ]
+    total_amount = ""
+    for pattern in amt_patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            total_amount = match.group(1)
+            break
 
     return {
         "merchant": merchant,
         "purchase_date": parsed_date,
+        "purchase_time": found_time,
         "total_amount": total_amount
     }
 # -----------------------------------------------------------------
@@ -114,6 +150,7 @@ def lambda_handler(event, context):
                 "upload_date": datetime.utcnow().isoformat(),
                 "merchant": fields["merchant"],
                 "purchase_date": fields["purchase_date"],
+                "purchase_time": fields["purchase_time"],
                 "total_amount": fields["total_amount"],
             }
         )
