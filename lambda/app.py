@@ -16,7 +16,7 @@ table = dynamodb.Table("Receipts")
 
 # --- NEW: simple field extractor ---------------------------------
 def extract_fields(text: str) -> dict:
-    """Return merchant, purchase_date, purchase_time, and total_amount from OCR text."""
+    """Return merchant, purchase_date, purchase_time, total_amount, and category from OCR text."""
 
     # Merchant: look for company name patterns
     merchant = ""
@@ -87,11 +87,30 @@ def extract_fields(text: str) -> dict:
             total_amount = match.group(1)
             break
 
+    # Category: determine based on merchant name
+    category_mapping = {
+        "grocery": ["REWE", "EDEKA", "ALDI", "LIDL", "KAUFLAND", "NETTO", "PENNY", "REAL"],
+        "restaurant": ["MCDONALD", "DOMINOS", "BURGER KING", "KFC", "SUBWAY", "PIZZA", "RESTAURANT", "CAFE", "BAR"],
+        "pharmacy": ["APOTHEKE", "PHARMACY", "DM", "ROSSMANN"],
+        "gas_station": ["SHELL", "ARAL", "ESSO", "BP", "TOTAL", "TANKSTELLE"],
+        "clothing": ["H&M", "ZARA", "C&A", "PRIMARK", "NIKE", "ADIDAS"],
+        "electronics": ["MEDIA MARKT", "SATURN", "CONRAD", "CYBERPORT", "APPLE"],
+        "other": []
+    }
+    
+    category = "other"  # default
+    merchant_upper = merchant.upper()
+    for cat, keywords in category_mapping.items():
+        if any(keyword in merchant_upper for keyword in keywords):
+            category = cat
+            break
+
     return {
         "merchant": merchant,
         "purchase_date": parsed_date,
         "purchase_time": found_time,
-        "total_amount": total_amount
+        "total_amount": total_amount,
+        "category": category
     }
 # -----------------------------------------------------------------
 
@@ -153,6 +172,7 @@ def lambda_handler(event, context):
                 "purchase_date": fields["purchase_date"],
                 "purchase_time": fields["purchase_time"],
                 "total_amount": fields["total_amount"],
+                "category": fields["category"],
             }
         )
         print("Successfully saved to DynamoDB")
