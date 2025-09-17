@@ -118,3 +118,4 @@ REWE-eBon.pdf
 lambda/lambda-deployment.zip
 lambda/python/*
 *.zip
+frontend/node_modules/*
