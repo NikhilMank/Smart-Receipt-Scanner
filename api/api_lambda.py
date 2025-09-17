@@ -200,12 +200,12 @@ def get_spending_summary(query_params):
         }
 
 def get_monthly_trends(query_params):
-    """Get monthly spending trends"""
+    """Get monthly spending trends with category breakdown"""
     try:
         # Scan all receipts (no date filtering to handle different formats)
         response = table.scan()
         
-        # Group by month
+        # Group by month and category
         monthly_data = {}
         
         for item in response['Items']:
@@ -232,17 +232,22 @@ def get_monthly_trends(query_params):
                     
                 amount_str = item.get('total_amount', '0,00')
                 amount = float(amount_str.replace(',', '.'))
+                category = item.get('category', 'other')
                 
                 if month_key not in monthly_data:
-                    monthly_data[month_key] = {'total': 0, 'count': 0}
+                    monthly_data[month_key] = {'total': 0, 'count': 0, 'categories': {}}
                 
                 monthly_data[month_key]['total'] += amount
                 monthly_data[month_key]['count'] += 1
                 
+                if category not in monthly_data[month_key]['categories']:
+                    monthly_data[month_key]['categories'][category] = 0
+                monthly_data[month_key]['categories'][category] += amount
+                
             except (ValueError, AttributeError):
                 continue
         
-        # Sort by month
+        # Sort by month and format for stacked bar chart
         sorted_months = sorted(monthly_data.items())
         
         return {
@@ -253,7 +258,8 @@ def get_monthly_trends(query_params):
                     {
                         'month': month,
                         'total_amount': round(data['total'], 2),
-                        'receipt_count': data['count']
+                        'receipt_count': data['count'],
+                        **{category: round(amount, 2) for category, amount in data['categories'].items()}
                     }
                     for month, data in sorted_months
                 ]

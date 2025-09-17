@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReceiptList from './components/ReceiptList';
 import Analytics from './components/Analytics';
+import EnhancedAnalytics from './components/EnhancedAnalytics';
 
 const API_BASE_URL = 'https://q24kalixmb.execute-api.eu-central-1.amazonaws.com/prod';
 
@@ -75,12 +76,7 @@ function App() {
       </div>
 
       {activeTab === 'receipts' && <ReceiptList receipts={receipts} />}
-      {activeTab === 'analytics' && (
-        <Analytics 
-          analytics={analytics} 
-          monthlyTrends={monthlyTrends} 
-        />
-      )}
+      {activeTab === 'analytics' && <EnhancedAnalytics />}
     </div>
   );
 }

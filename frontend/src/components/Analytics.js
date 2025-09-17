@@ -1,12 +1,41 @@
 import React from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+const COLORS = [
+  '#0088FE', // Blue
+  '#00C49F', // Green
+  '#FFBB28', // Yellow
+  '#FF8042', // Orange
+  '#8884D8', // Purple
+  '#82CA9D', // Light Green
+  '#FFC658', // Gold
+  '#FF7C7C', // Light Red
+  '#8DD1E1', // Light Blue
+  '#D084D0', // Pink
+  '#87D068', // Lime
+  '#FFB347', // Peach
+  '#B19CD9', // Lavender
+  '#FFD700', // Bright Gold
+  '#FF6B6B'  // Coral
+];
 
 function Analytics({ analytics, monthlyTrends }) {
   if (!analytics) {
     return <div>No analytics data available</div>;
   }
+
+  // Debug: Log the data structure
+  console.log('Monthly trends data:', monthlyTrends);
+  
+  // Get all unique categories across all months
+  const allCategories = new Set();
+  monthlyTrends.forEach(month => {
+    Object.keys(month)
+      .filter(key => !['month', 'total_amount', 'receipt_count'].includes(key))
+      .forEach(category => allCategories.add(category));
+  });
+  const categories = Array.from(allCategories);
+  console.log('All categories found:', categories);
 
   // Prepare data for pie chart
   const categoryData = Object.entries(analytics.by_category).map(([category, amount]) => ({
@@ -48,14 +77,24 @@ function Analytics({ analytics, monthlyTrends }) {
       </div>
 
       <div className="card" style={{ gridColumn: '1 / -1' }}>
-        <h2>Monthly Trends</h2>
+        <h2>Monthly Trends by Category</h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={monthlyTrends}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="total_amount" fill="#8884d8" />
+            <Legend />
+            {/* Dynamic bars for all categories */}
+            {categories.map((category, index) => (
+              <Bar 
+                key={category} 
+                dataKey={category} 
+                stackId="a" 
+                fill={COLORS[index % COLORS.length]} 
+                name={category}
+              />
+            ))}
           </BarChart>
         </ResponsiveContainer>
       </div>

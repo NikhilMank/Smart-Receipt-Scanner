@@ -19,7 +19,7 @@ echo "Creating/updating Lambda function..."
 aws lambda create-function \
     --function-name $FUNCTION_NAME \
     --runtime python3.12 \
-    --role arn:aws:iam::$AWS_ACCOUNT_ID:role/lambda-execution-role \
+    --role arn:aws:iam::$AWS_ACCOUNT_ID:role/ReceiptProcessor-role-y5lp12ms \
     --handler api_lambda.lambda_handler \
     --zip-file fileb://api-lambda.zip \
     --timeout 30 \
