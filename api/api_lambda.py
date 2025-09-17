@@ -13,6 +13,15 @@ def decimal_default(obj):
         return float(obj)
     raise TypeError
 
+def cors_headers():
+    """Return CORS headers for all responses"""
+    return {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+    }
+
 def lambda_handler(event, context):
     """
     API Gateway Lambda function to query receipt data
@@ -41,14 +50,14 @@ def lambda_handler(event, context):
         else:
             return {
                 'statusCode': 404,
-                'headers': {'Content-Type': 'application/json'},
+                'headers': cors_headers(),
                 'body': json.dumps({'error': 'Endpoint not found'})
             }
             
     except Exception as e:
         return {
             'statusCode': 500,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': cors_headers(),
             'body': json.dumps({'error': str(e)})
         }
 
@@ -92,7 +101,7 @@ def get_receipts(query_params):
         
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': cors_headers(),
             'body': json.dumps({
                 'receipts': response['Items'],
                 'count': response['Count'],
@@ -103,7 +112,7 @@ def get_receipts(query_params):
     except Exception as e:
         return {
             'statusCode': 500,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': cors_headers(),
             'body': json.dumps({'error': str(e)})
         }
 
@@ -115,20 +124,20 @@ def get_receipt_by_id(receipt_id):
         if 'Item' not in response:
             return {
                 'statusCode': 404,
-                'headers': {'Content-Type': 'application/json'},
+                'headers': cors_headers(),
                 'body': json.dumps({'error': 'Receipt not found'})
             }
         
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': cors_headers(),
             'body': json.dumps(response['Item'], default=decimal_default)
         }
         
     except Exception as e:
         return {
             'statusCode': 500,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': cors_headers(),
             'body': json.dumps({'error': str(e)})
         }
 
@@ -173,7 +182,7 @@ def get_spending_summary(query_params):
         
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': cors_headers(),
             'body': json.dumps({
                 'summary': {
                     'total_amount': round(total_amount, 2),
@@ -186,28 +195,15 @@ def get_spending_summary(query_params):
     except Exception as e:
         return {
             'statusCode': 500,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': cors_headers(),
             'body': json.dumps({'error': str(e)})
         }
 
 def get_monthly_trends(query_params):
     """Get monthly spending trends"""
     try:
-        # Get last 12 months by default
-        end_date = datetime.now().date()
-        start_date = end_date - timedelta(days=365)
-        
-        if query_params.get('months'):
-            months = int(query_params['months'])
-            start_date = end_date - timedelta(days=months * 30)
-        
-        # Scan receipts in date range
-        response = table.scan(
-            FilterExpression=Attr('purchase_date').between(
-                start_date.isoformat(), 
-                end_date.isoformat()
-            )
-        )
+        # Scan all receipts (no date filtering to handle different formats)
+        response = table.scan()
         
         # Group by month
         monthly_data = {}
@@ -218,8 +214,22 @@ def get_monthly_trends(query_params):
                 continue
                 
             try:
-                # Extract year-month
-                month_key = purchase_date[:7]  # YYYY-MM
+                # Parse different date formats
+                month_key = None
+                
+                if '-' in purchase_date and len(purchase_date) == 10:
+                    # ISO format: YYYY-MM-DD
+                    month_key = purchase_date[:7]  # YYYY-MM
+                elif '.' in purchase_date:
+                    # German format: DD.MM.YYYY
+                    parts = purchase_date.split('.')
+                    if len(parts) == 3:
+                        day, month, year = parts
+                        month_key = f"{year}-{month.zfill(2)}"
+                
+                if not month_key:
+                    continue
+                    
                 amount_str = item.get('total_amount', '0,00')
                 amount = float(amount_str.replace(',', '.'))
                 
@@ -237,7 +247,7 @@ def get_monthly_trends(query_params):
         
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': cors_headers(),
             'body': json.dumps({
                 'monthly_trends': [
                     {
@@ -253,6 +263,6 @@ def get_monthly_trends(query_params):
     except Exception as e:
         return {
             'statusCode': 500,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': cors_headers(),
             'body': json.dumps({'error': str(e)})
         }
