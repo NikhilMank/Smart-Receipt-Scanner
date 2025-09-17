@@ -21,18 +21,43 @@ def extract_fields(text: str) -> dict:
     # Merchant: look for company name patterns
     merchant = ""
     lines = [l.strip() for l in text.splitlines() if l.strip()]
+    
+    # Known German store names to prioritize
+    known_stores = ["KAUFLAND", "REWE", "EDEKA", "ALDI", "LIDL", "NETTO", "PENNY", "REAL", 
+                   "DM", "ROSSMANN", "SHELL", "ARAL", "ESSO", "BP", "MCDONALD", "BURGER KING"]
+    
+    # First, try to find known store names
     for line in lines:
-        # Skip lines with too many numbers, but allow some
-        if (re.search(r"[A-Za-z]{3,}", line) and 
-            not re.search(r"\d{5,}", line) and
-            not re.search(r"(?:Tel|UID|Datum|Uhrzeit)", line, re.IGNORECASE)):
-            merchant = line
+        line_upper = line.upper()
+        for store in known_stores:
+            if store in line_upper and len(line.strip()) < 50:  # Avoid long lines
+                merchant = line.strip()
+                break
+        if merchant:
             break
+    
+    # If no known store found, use improved heuristics
+    if not merchant:
+        for line in lines:
+            # Skip promotional/reward text
+            if re.search(r"(?:earned|points|purchase|You|o\s)", line, re.IGNORECASE):
+                continue
+            # Skip lines with phone numbers, dates, or IDs
+            if re.search(r"(?:Tel|UID|Datum|Uhrzeit|\d{5,}|DE\d+)", line, re.IGNORECASE):
+                continue
+            # Look for lines with letters but not too long
+            if (re.search(r"[A-Za-z]{3,}", line) and 
+                len(line.strip()) < 30 and
+                not re.search(r"\d{3,}", line)):
+                merchant = line.strip()
+                break
 
-    # Date: German format patterns (DD.MM.YYYY)
+    # Date: German format patterns (DD.MM.YYYY and DD.MM.YY)
     date_patterns = [
         r"(?:Datum|Date)\s*[:\-]?\s*(\d{1,2}\.\d{1,2}\.\d{4})",  # Datum: 16.08.2025
+        r"(?:Datum|Date)\s*[:\-]?\s*(\d{1,2}\.\d{1,2}\.\d{2})",  # Datum: 15.09.25
         r"\b(\d{1,2}\.\d{1,2}\.\d{4})\b",  # 16.08.2025
+        r"\b(\d{1,2}\.\d{1,2}\.\d{2})\b",  # 15.09.25
         r"\b(\d{4}-\d{1,2}-\d{1,2})\b",  # 2025-08-16
         r"TSE-Start:\s*(\d{4}-\d{2}-\d{2})",  # TSE-Start: 2025-08-16
     ]
@@ -47,7 +72,8 @@ def extract_fields(text: str) -> dict:
     parsed_date = ""
     if found_date:
         date_formats = [
-            "%d.%m.%Y",  # German format
+            "%d.%m.%Y",  # German format 4-digit year
+            "%d.%m.%y",  # German format 2-digit year
             "%Y-%m-%d",  # ISO format
         ]
         for fmt in date_formats:
@@ -74,11 +100,13 @@ def extract_fields(text: str) -> dict:
 
     # Total amount: German receipt patterns
     amt_patterns = [
+        r"Summe\s+(\d+,\d{2})",  # Kaufland: Summe 11,45
         r"SUMME\s+EUR\s+(\d+,\d{2})",  # SUMME EUR 4,56
         r"Betrag\s+EUR\s+(\d+,\d{2})",  # Betrag EUR 4,56
+        r"EUR\s+(\d+,\d{2})\s*$",  # EUR 11,45 at line end
+        r"Kartenzahlung\s+(\d+,\d{2})",  # Kartenzahlung 11,45
         r"Gesamtbetrag\s+[\d,]+\s+[\d,]+\s+(\d+,\d{2})",  # Gesamtbetrag line
         r"(?:Total|Gesamt)\s*[:\-]?\s*EUR?\s*(\d+,\d{2})",  # Total EUR 4,56
-        r"EUR\s+(\d+,\d{2})(?:\s|$)",  # EUR 4,56 at end
     ]
     total_amount = ""
     for pattern in amt_patterns:
@@ -89,7 +117,7 @@ def extract_fields(text: str) -> dict:
 
     # Category: determine based on merchant name
     category_mapping = {
-        "grocery": ["REWE", "EDEKA", "ALDI", "LIDL", "KAUFLAND", "NETTO", "PENNY", "REAL"],
+        "grocery": ["REWE", "EDEKA", "ALDI", "LIDL", "KAUFLAND", "NETTO", "PENNY", "REAL", "SUPERMARKT"],
         "restaurant": ["MCDONALD", "DOMINOS", "BURGER KING", "KFC", "SUBWAY", "PIZZA", "RESTAURANT", "CAFE", "BAR"],
         "pharmacy": ["APOTHEKE", "PHARMACY", "DM", "ROSSMANN"],
         "gas_station": ["SHELL", "ARAL", "ESSO", "BP", "TOTAL", "TANKSTELLE"],

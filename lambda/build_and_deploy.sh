@@ -28,8 +28,8 @@ IMAGE_TAG="latest"
 docker tag $AWS_ECR_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_ECR_REPO_NAME:$IMAGE_TAG
 docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_ECR_REPO_NAME:$IMAGE_TAG
 
-# Update the Lambda function to use the new image
-aws lambda update-function-code \
-    --function-name $LAMBDA_FUNCTION_NAME \
-    --image-uri $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_ECR_REPO_NAME:$IMAGE_TAG \
-    --region $AWS_REGION
+# # Update the Lambda function to use the new image
+# aws lambda update-function-code \
+#     --function-name $LAMBDA_FUNCTION_NAME \
+#     --image-uri $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_ECR_REPO_NAME:$IMAGE_TAG \
+#     --region $AWS_REGION

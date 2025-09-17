@@ -119,3 +119,5 @@ lambda/lambda-deployment.zip
 lambda/python/*
 *.zip
 frontend/node_modules/*
+frontend/package-lock.json
+Kaufland-Bon.pdf
