@@ -24,7 +24,8 @@ def extract_fields(text: str) -> dict:
     
     # Known German store names to prioritize
     known_stores = ["KAUFLAND", "REWE", "EDEKA", "ALDI", "LIDL", "NETTO", "PENNY", "REAL", 
-                   "DM", "ROSSMANN", "SHELL", "ARAL", "ESSO", "BP", "MCDONALD", "BURGER KING"]
+                   "DM", "ROSSMANN", "SHELL", "ARAL", "ESSO", "BP", "MCDONALD", "BURGER KING",
+                   "EUROSHOP", "SCHUM"]
     
     # First, try to find known store names
     for line in lines:
@@ -40,20 +41,25 @@ def extract_fields(text: str) -> dict:
     if not merchant:
         for line in lines:
             # Skip promotional/reward text
-            if re.search(r"(?:earned|points|purchase|You|o\s)", line, re.IGNORECASE):
+            if re.search(r"(?:earned|points|purchase|You|o\s|danken|Einkauf)", line, re.IGNORECASE):
                 continue
             # Skip lines with phone numbers, dates, or IDs
-            if re.search(r"(?:Tel|UID|Datum|Uhrzeit|\d{5,}|DE\d+)", line, re.IGNORECASE):
+            if re.search(r"(?:Tel|UID|Datum|Uhrzeit|\d{5,}|DE\d+|www\.|Terminal)", line, re.IGNORECASE):
                 continue
+            # Look for company patterns (GmbH, Co.KG, etc.)
+            if re.search(r"(?:GmbH|Co\.?KG|AG|e\.V\.|UG)", line, re.IGNORECASE):
+                merchant = re.sub(r"[^a-zA-Z0-9\s&.]", "", line).strip()  # Clean special chars
+                break
             # Look for lines with letters but not too long
             if (re.search(r"[A-Za-z]{3,}", line) and 
-                len(line.strip()) < 30 and
+                len(line.strip()) < 40 and
                 not re.search(r"\d{3,}", line)):
                 merchant = line.strip()
                 break
 
     # Date: German format patterns (DD.MM.YYYY and DD.MM.YY)
     date_patterns = [
+        r"Datum\s+(\d{1,2}\.\d{1,2}\.\d{2,4})\s+",  # Datum 18.09.23 
         r"(?:Datum|Date)\s*[:\-]?\s*(\d{1,2}\.\d{1,2}\.\d{4})",  # Datum: 16.08.2025
         r"(?:Datum|Date)\s*[:\-]?\s*(\d{1,2}\.\d{1,2}\.\d{2})",  # Datum: 15.09.25
         r"\b(\d{1,2}\.\d{1,2}\.\d{4})\b",  # 16.08.2025
@@ -100,6 +106,9 @@ def extract_fields(text: str) -> dict:
 
     # Total amount: German receipt patterns
     amt_patterns = [
+        r"EUR\s+(\d+,\d{2})\s*(?:PAN|$)",  # EUR 0,55 PAN (girocard)
+        r"girocard\s+EUR\s+(\d+,\d{2})",  # girocard EUR 0,55
+        r"kontaktlos\s+girocard\s+EUR\s+(\d+,\d{2})",  # kontaktlos girocard EUR 0,55
         r"Summe\s+(\d+,\d{2})",  # Kaufland: Summe 11,45
         r"SUMME\s+EUR\s+(\d+,\d{2})",  # SUMME EUR 4,56
         r"Betrag\s+EUR\s+(\d+,\d{2})",  # Betrag EUR 4,56
@@ -107,6 +116,7 @@ def extract_fields(text: str) -> dict:
         r"Kartenzahlung\s+(\d+,\d{2})",  # Kartenzahlung 11,45
         r"Gesamtbetrag\s+[\d,]+\s+[\d,]+\s+(\d+,\d{2})",  # Gesamtbetrag line
         r"(?:Total|Gesamt)\s*[:\-]?\s*EUR?\s*(\d+,\d{2})",  # Total EUR 4,56
+        r"fotal\s+EUR\s+(\d+,\d{2})",  # OCR misread "Total" as "fotal"
     ]
     total_amount = ""
     for pattern in amt_patterns:
@@ -153,7 +163,17 @@ def lambda_handler(event, context):
         print("Getting S3 object...")
         obj = s3.get_object(Bucket=bucket, Key=key)
         file_bytes = obj['Body'].read()
-        print(f"File size: {len(file_bytes)} bytes")
+        
+        # Extract user_id from S3 key path (receipts/user_id/filename)
+        path_parts = key.split('/')
+        user_id = path_parts[1] if len(path_parts) >= 3 and path_parts[0] == 'receipts' else 'unknown'
+        
+        # Validate user_id
+        if user_id == 'unknown' or not user_id or user_id == 'None':
+            print(f"Invalid user_id extracted from path: {key}")
+            return {"status": "error", "message": "Invalid file path structure"}
+            
+        print(f"File size: {len(file_bytes)} bytes, User ID: {user_id}")
     except Exception as e:
         print(f"Error getting object: {e}")
         return {"status": "error", "message": str(e)}
@@ -190,9 +210,16 @@ def lambda_handler(event, context):
     try:
         print("Saving to DynamoDB...")
         receipt_id = str(uuid.uuid4())
+        
+        # Final validation before saving
+        if not user_id or user_id in ['unknown', 'None', '']:
+            print(f"Refusing to save receipt with invalid user_id: {user_id}")
+            return {"status": "error", "message": "Invalid user identification"}
+            
         table.put_item(
             Item={
                 "receipt_id": receipt_id,
+                "user_id": user_id,
                 "file_name": key,
                 "raw_text": text_output,
                 "upload_date": datetime.utcnow().isoformat(),
