@@ -118,6 +118,7 @@ def extract_fields(text: str) -> dict:
         r"(?:Total|Gesamt)\s*[:\-]?\s*EUR?\s*(\d+,\d{2})",  # Total/Gesamt EUR 4,56
         r"fotal\s+EUR\s+(\d+,\d{2})",  # OCR misread "Total" as "fotal"
     ]
+    
     total_amount = ""
     for pattern in amt_patterns:
         match = re.search(pattern, text, re.IGNORECASE)
