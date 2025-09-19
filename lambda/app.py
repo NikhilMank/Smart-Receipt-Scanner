@@ -25,7 +25,7 @@ def extract_fields(text: str) -> dict:
     # Known German store names to prioritize
     known_stores = ["KAUFLAND", "REWE", "EDEKA", "ALDI", "LIDL", "NETTO", "PENNY", "REAL", 
                    "DM", "ROSSMANN", "SHELL", "ARAL", "ESSO", "BP", "MCDONALD", "BURGER KING",
-                   "EUROSHOP", "SCHUM"]
+                   "EUROSHOP", "SCHUM", "ZARA"]
     
     # First, try to find known store names
     for line in lines:
@@ -45,6 +45,9 @@ def extract_fields(text: str) -> dict:
                 continue
             # Skip lines with phone numbers, dates, or IDs
             if re.search(r"(?:Tel|UID|Datum|Uhrzeit|\d{5,}|DE\d+|www\.|Terminal)", line, re.IGNORECASE):
+                continue
+            # Skip payment method text
+            if re.search(r"(?:GIROCARD|MAESTRO|VPAY|VISA|MASTERCARD|Kartennummer|Terminal ID)", line, re.IGNORECASE):
                 continue
             # Look for company patterns (GmbH, Co.KG, etc.)
             if re.search(r"(?:GmbH|Co\.?KG|AG|e\.V\.|UG)", line, re.IGNORECASE):
@@ -106,6 +109,8 @@ def extract_fields(text: str) -> dict:
 
     # Total amount: German receipt patterns
     amt_patterns = [
+        r"GESAMT\s+\d+\s+(\d+,\d{2})",  # GESAMT 3 23,05 (ZARA format)
+        r"Betrag:\s+(\d+,\d{2})",  # Betrag: 23,05
         r"(?:TOTAL|Total)\s+EUR\s+(\d+[,.]\d{2})",  # TOTAL EUR 0.55 or 0,55
         r"girocard\s+EUR\s+(\d+,\d{2})",  # girocard EUR 0,55
         r"kontaktlos\s+girocard\s+EUR\s+(\d+,\d{2})",  # kontaktlos girocard EUR 0,55
@@ -132,7 +137,7 @@ def extract_fields(text: str) -> dict:
         "restaurant": ["MCDONALD", "DOMINOS", "BURGER KING", "KFC", "SUBWAY", "PIZZA", "RESTAURANT", "CAFE", "BAR"],
         "drogerie": ["APOTHEKE", "PHARMACY", "DM", "ROSSMANN"],
         "gas_station": ["SHELL", "ARAL", "ESSO", "BP", "TOTAL", "TANKSTELLE"],
-        "clothing": ["H&M", "ZARA", "C&A", "PRIMARK", "NIKE", "ADIDAS"],
+        "clothing": ["H&M", "ZARA", "C&A", "PRIMARK", "NIKE", "ADIDAS", "REEBOK", "FASHION", "NEW YORKER"],
         "electronics": ["MEDIA MARKT", "SATURN", "CONRAD", "CYBERPORT", "APPLE"],
         "other": []
     }
