@@ -25,7 +25,11 @@ def extract_fields(text: str) -> dict:
     # Known German store names to prioritize
     known_stores = ["KAUFLAND", "REWE", "EDEKA", "ALDI", "LIDL", "NETTO", "PENNY", "REAL", 
                    "DM", "ROSSMANN", "SHELL", "ARAL", "ESSO", "BP", "MCDONALD", "BURGER KING",
-                   "EUROSHOP", "SCHUM", "ZARA"]
+                   "EUROSHOP", "SCHUM", "ZARA", "H&M", "C&A", 
+                   "SATURN", "MEDIAMARKT", "CONRAD", "CYBERPORT", "APPLE",
+                   "APOTHEKE", "PHARMACY", "SUBWAY", "KFC", "DOMINOS", "TANKSTELLE",
+                   "PRIMARK", "NIKE", "ADIDAS", "REEBOK", "NEW YORKER",
+                   ]
     
     # First, try to find known store names
     for line in lines:
