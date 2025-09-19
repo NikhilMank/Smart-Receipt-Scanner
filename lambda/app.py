@@ -129,7 +129,7 @@ def extract_fields(text: str) -> dict:
     category_mapping = {
         "grocery": ["REWE", "EDEKA", "ALDI", "LIDL", "KAUFLAND", "NETTO", "PENNY", "REAL", "SUPERMARKT"],
         "restaurant": ["MCDONALD", "DOMINOS", "BURGER KING", "KFC", "SUBWAY", "PIZZA", "RESTAURANT", "CAFE", "BAR"],
-        "pharmacy": ["APOTHEKE", "PHARMACY", "DM", "ROSSMANN"],
+        "drogerie": ["APOTHEKE", "PHARMACY", "DM", "ROSSMANN"],
         "gas_station": ["SHELL", "ARAL", "ESSO", "BP", "TOTAL", "TANKSTELLE"],
         "clothing": ["H&M", "ZARA", "C&A", "PRIMARK", "NIKE", "ADIDAS"],
         "electronics": ["MEDIA MARKT", "SATURN", "CONRAD", "CYBERPORT", "APPLE"],
