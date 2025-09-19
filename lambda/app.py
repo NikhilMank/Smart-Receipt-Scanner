@@ -106,7 +106,7 @@ def extract_fields(text: str) -> dict:
 
     # Total amount: German receipt patterns
     amt_patterns = [
-        r"EUR\s+(\d+,\d{2})\s*(?:PAN|$)",  # EUR 0,55 PAN (girocard)
+        r"(?:TOTAL|Total)\s+EUR\s+(\d+[,.]\d{2})",  # TOTAL EUR 0.55 or 0,55
         r"girocard\s+EUR\s+(\d+,\d{2})",  # girocard EUR 0,55
         r"kontaktlos\s+girocard\s+EUR\s+(\d+,\d{2})",  # kontaktlos girocard EUR 0,55
         r"Summe\s+(\d+,\d{2})",  # Kaufland: Summe 11,45
@@ -115,7 +115,7 @@ def extract_fields(text: str) -> dict:
         r"EUR\s+(\d+,\d{2})\s*$",  # EUR 11,45 at line end
         r"Kartenzahlung\s+(\d+,\d{2})",  # Kartenzahlung 11,45
         r"Gesamtbetrag\s+[\d,]+\s+[\d,]+\s+(\d+,\d{2})",  # Gesamtbetrag line
-        r"(?:Total|Gesamt)\s*[:\-]?\s*EUR?\s*(\d+,\d{2})",  # Total EUR 4,56
+        r"(?:Total|Gesamt)\s*[:\-]?\s*EUR?\s*(\d+,\d{2})",  # Total/Gesamt EUR 4,56
         r"fotal\s+EUR\s+(\d+,\d{2})",  # OCR misread "Total" as "fotal"
     ]
     total_amount = ""
