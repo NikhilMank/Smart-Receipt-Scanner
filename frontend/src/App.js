@@ -3,7 +3,9 @@ import axios from 'axios';
 import ReceiptList from './components/ReceiptList';
 import Analytics from './components/Analytics';
 import EnhancedAnalytics from './components/EnhancedAnalytics';
+import BudgetAnalytics from './components/BudgetAnalytics';
 import UploadReceipt from './components/UploadReceipt';
+import Profile from './components/Profile';
 import Auth from './components/Auth';
 
 const API_BASE_URL = 'https://jo1dafqlb5.execute-api.eu-central-1.amazonaws.com/prod';
@@ -106,6 +108,7 @@ function App() {
           <button 
             onClick={() => setActiveTab('analytics')}
             style={{ 
+              marginRight: '10px',
               padding: '8px 16px',
               backgroundColor: activeTab === 'analytics' ? '#2196F3' : '#f0f0f0',
               color: activeTab === 'analytics' ? 'white' : 'black',
@@ -115,6 +118,34 @@ function App() {
             }}
           >
             📊 Analytics
+          </button>
+          <button 
+            onClick={() => setActiveTab('budget')}
+            style={{ 
+              marginRight: '10px',
+              padding: '8px 16px',
+              backgroundColor: activeTab === 'budget' ? '#2196F3' : '#f0f0f0',
+              color: activeTab === 'budget' ? 'white' : 'black',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            💰 Budget
+          </button>
+          <button 
+            onClick={() => setActiveTab('profile')}
+            style={{ 
+              marginRight: '10px',
+              padding: '8px 16px',
+              backgroundColor: activeTab === 'profile' ? '#2196F3' : '#f0f0f0',
+              color: activeTab === 'profile' ? 'white' : 'black',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            👤 Profile
           </button>
           <button 
             onClick={handleLogout}
@@ -136,6 +167,8 @@ function App() {
       {activeTab === 'upload' && <UploadReceipt onUploadSuccess={fetchData} />}
       {activeTab === 'receipts' && <ReceiptList receipts={receipts} />}
       {activeTab === 'analytics' && <EnhancedAnalytics />}
+      {activeTab === 'budget' && <BudgetAnalytics />}
+      {activeTab === 'profile' && <Profile />}
     </div>
   );
 }
