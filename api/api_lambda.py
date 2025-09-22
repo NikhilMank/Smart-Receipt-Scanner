@@ -694,7 +694,7 @@ def get_presigned_upload_url(event, user_id):
         unique_filename = f"receipts/{user_id}/{uuid.uuid4()}.{file_extension}"
         
         s3_client = boto3.client('s3')
-        bucket_name = 'receipt-scanner-nikhil-dev'
+        bucket_name = 'receipt-scanner-publicstorage'
         
         presigned_url = s3_client.generate_presigned_url(
             'put_object',

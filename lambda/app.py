@@ -168,6 +168,11 @@ def lambda_handler(event, context):
     bucket = record['s3']['bucket']['name']
     key = unquote_plus(record['s3']['object']['key'])
     print(f"Processing file: {key} from bucket: {bucket}")
+    
+    # Validate bucket name
+    expected_bucket = 'receipt-scanner-publicstorage'
+    if bucket != expected_bucket:
+        print(f"Warning: Processing file from unexpected bucket: {bucket}, expected: {expected_bucket}")
 
     try:
         print("Getting S3 object...")
