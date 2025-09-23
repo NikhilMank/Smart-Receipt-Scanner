@@ -25,7 +25,7 @@ def extract_fields(text: str) -> dict:
     # Known German store names to prioritize
     known_stores = ["KAUFLAND", "REWE", "EDEKA", "ALDI", "LIDL", "NETTO", "PENNY", "REAL", 
                    "DM", "ROSSMANN", "SHELL", "ARAL", "ESSO", "BP", "MCDONALD", "BURGER KING",
-                   "EUROSHOP", "SCHUM", "ZARA", "H&M", "C&A", 
+                   "EUROSHOP", "SCHUM", "ZARA", "H&M", "C&A", "ACTION", "TEDI", "NKD",
                    "SATURN", "MEDIAMARKT", "CONRAD", "CYBERPORT", "APPLE",
                    "APOTHEKE", "PHARMACY", "SUBWAY", "KFC", "DOMINOS", "TANKSTELLE",
                    "PRIMARK", "NIKE", "ADIDAS", "REEBOK", "NEW YORKER",
@@ -34,10 +34,13 @@ def extract_fields(text: str) -> dict:
     # First, try to find known store names
     for line in lines:
         line_upper = line.upper()
+        # Clean the line of special characters for better matching
+        cleaned_line = re.sub(r'[^A-Z0-9\s]', ' ', line_upper)
         for store in known_stores:
-            if store in line_upper and len(line.strip()) < 50:  # Avoid long lines
-                merchant = line.strip()
-                break
+            if store in line_upper or store in cleaned_line:
+                if len(line.strip()) < 50:  # Avoid long lines
+                    merchant = store  # Use the clean store name instead of OCR text
+                    break
         if merchant:
             break
     
@@ -113,6 +116,7 @@ def extract_fields(text: str) -> dict:
 
     # Total amount: German receipt patterns
     amt_patterns = [
+        r"SUMME\s+(\d+[,.]\d{2})",  # ACTION format: SUMME 41.21 or 41,21
         r"GESAMT\s+\d+\s+(\d+,\d{2})",  # GESAMT 3 23,05 (ZARA format)
         r"Betrag:\s+(\d+,\d{2})",  # Betrag: 23,05
         r"(?:TOTAL|Total)\s+EUR\s+(\d+[,.]\d{2})",  # TOTAL EUR 0.55 or 0,55
@@ -139,11 +143,11 @@ def extract_fields(text: str) -> dict:
     category_mapping = {
         "grocery": ["REWE", "EDEKA", "ALDI", "LIDL", "KAUFLAND", "NETTO", "PENNY", "REAL", "SUPERMARKT"],
         "restaurant": ["MCDONALD", "DOMINOS", "BURGER KING", "KFC", "SUBWAY", "PIZZA", "RESTAURANT", "CAFE", "BAR"],
-        "drogerie": ["APOTHEKE", "PHARMACY", "DM", "ROSSMANN"],
-        "gas_station": ["SHELL", "ARAL", "ESSO", "BP", "TOTAL", "TANKSTELLE"],
-        "clothing": ["H&M", "ZARA", "C&A", "PRIMARK", "NIKE", "ADIDAS", "REEBOK", "FASHION", "NEW YORKER"],
+        "drogerie": ["APOTHEKE", "PHARMACY", "DM", "ROSSMANN", "DROGERIE"],
+        "gas_station": ["SHELL", "ARAL", "ESSO", "BP", "TOTAL", "TANKSTELLE", "JET"],
+        "clothing": ["H&M", "ZARA", "C&A", "PRIMARK", "NIKE", "ADIDAS", "REEBOK", "FASHION", "NEW YORKER", "HUGO BOSS", "PUMA"],
         "electronics": ["MEDIA MARKT", "SATURN", "CONRAD", "CYBERPORT", "APPLE"],
-        "other": []
+        "other": ["ACTION", "EUROSHOP", "SCHUM", "TEDI", "NKD"]
     }
     
     category = "other"  # default
