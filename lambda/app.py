@@ -6,9 +6,11 @@ import boto3
 import uuid
 from datetime import datetime
 from urllib.parse import unquote_plus
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageFilter
 import pytesseract
 from pdf2image import convert_from_bytes
+import cv2
+import numpy as np
 
 s3 = boto3.client("s3")
 dynamodb = boto3.resource("dynamodb")
@@ -166,6 +168,43 @@ def extract_fields(text: str) -> dict:
     }
 # -----------------------------------------------------------------
 
+def preprocess_image(img):
+    """Enhance image for better OCR accuracy"""
+    print("Applying image preprocessing...")
+    
+    # Convert PIL to OpenCV format
+    img_array = np.array(img)
+    if len(img_array.shape) == 3:
+        img_cv = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+    else:
+        img_cv = img_array
+    
+    # Convert to grayscale
+    if len(img_cv.shape) == 3:
+        gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = img_cv
+    
+    # Apply Gaussian blur to reduce noise
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    
+    # Enhance contrast using CLAHE
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    enhanced = clahe.apply(blurred)
+    
+    # Apply binary threshold (Otsu's method)
+    _, binary = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    # Morphological operations to clean up
+    kernel = np.ones((2, 2), np.uint8)
+    cleaned = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+    
+    # Convert back to PIL Image
+    processed_img = Image.fromarray(cleaned)
+    
+    print(f"Image preprocessing completed. Size: {processed_img.size}")
+    return processed_img
+
 def lambda_handler(event, context):
     print("Event:", json.dumps(event, indent=2))
     record = event['Records'][0]
@@ -209,10 +248,15 @@ def lambda_handler(event, context):
             if img.width > 2000 or img.height > 2000:
                 print("Resizing large image...")
                 img.thumbnail((2000, 2000), Image.Resampling.LANCZOS)
-            print(f"Image size: {img.width}x{img.height}")
+            print(f"Original image size: {img.width}x{img.height}")
+            
+            # Apply image preprocessing for better OCR
+            processed_img = preprocess_image(img)
+            
             print("Running tesseract with German language support...")
-            # Use German + English for better accuracy on German receipts
-            text_output = pytesseract.image_to_string(img, lang='deu+eng', timeout=60)
+            # Enhanced Tesseract config for better text recognition
+            custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÄÖÜäöüß.,:-€ '
+            text_output = pytesseract.image_to_string(processed_img, lang='deu+eng', config=custom_config, timeout=60)
             print("Tesseract completed successfully")
 
         print(f"OCR completed. Text length: {len(text_output)}")
