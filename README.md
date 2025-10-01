@@ -126,6 +126,7 @@ A **cloud-native, multi-user receipt management system** that automatically extr
 
 ---
 
+<!--
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -143,6 +144,7 @@ A **cloud-native, multi-user receipt management system** that automatically extr
 6. **Test the complete workflow**
 
 *Detailed setup instructions available in PROJECT_DOCUMENTATION.md*
+-->
 
 ---
 
