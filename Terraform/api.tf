@@ -605,3 +605,34 @@ resource "aws_api_gateway_integration_response" "presigned_url_options" { # Inte
       "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
     }
 }
+
+#######################################################################################
+resource "aws_api_gateway_deployment" "receipt-scanner-api" {
+  rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
+  depends_on = [
+    aws_api_gateway_integration.metrics_get_lambda,
+    aws_api_gateway_integration.metrics_options,
+    aws_api_gateway_integration.monthly_get_lambda,
+    aws_api_gateway_integration.monthly_options,
+    aws_api_gateway_integration.patterns_get_lambda,
+    aws_api_gateway_integration.patterns_options,
+    aws_api_gateway_integration.summary_get_lambda,
+    aws_api_gateway_integration.summary_options,
+    aws_api_gateway_integration.login_post_lambda,
+    aws_api_gateway_integration.login_options,
+    aws_api_gateway_integration.register_post_lambda,
+    aws_api_gateway_integration.register_options,
+    aws_api_gateway_integration.profile_get_lambda,
+    aws_api_gateway_integration.profile_put_lambda,
+    aws_api_gateway_integration.profile_options,
+    aws_api_gateway_integration.receipts_get_lambda,
+    aws_api_gateway_integration.receipts_options,
+    aws_api_gateway_integration.presigned_url_post_lambda,
+    aws_api_gateway_integration.presigned_url_options
+  ]
+}
+resource "aws_api_gateway_stage" "prod" {
+  stage_name = "prod"
+  rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
+  deployment_id = aws_api_gateway_deployment.receipt-scanner-api.id
+}
