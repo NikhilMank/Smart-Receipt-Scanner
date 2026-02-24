@@ -8,7 +8,7 @@ import UploadReceipt from './components/UploadReceipt';
 import Profile from './components/Profile';
 import Auth from './components/Auth';
 
-const API_BASE_URL = 'https://jo1dafqlb5.execute-api.eu-central-1.amazonaws.com/prod';
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 function App() {
   const [receipts, setReceipts] = useState([]);

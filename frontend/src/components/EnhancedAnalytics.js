@@ -11,7 +11,7 @@ const COLORS = [
   '#87D068', '#FFB347', '#B19CD9', '#FFD700', '#FF6B6B'
 ];
 
-const API_BASE_URL = 'https://jo1dafqlb5.execute-api.eu-central-1.amazonaws.com/prod';
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 function EnhancedAnalytics() {
   const [analytics, setAnalytics] = useState(null);
