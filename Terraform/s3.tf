@@ -112,3 +112,21 @@ data "aws_iam_policy_document" "public_storage_policy" {
 resource "aws_s3_bucket" "nikhil_dev" {
   bucket = "receipt-scanner-nikhil-dev"
 }
+
+locals {
+  repo_root = abspath("${path.module}")
+}
+
+resource "null_resource" "build_and_upload_frontend" {
+
+  provisioner "local-exec" {
+    interpreter = ["/usr/bin/env", "bash", "-lc"]
+    command = "${local.repo_root}/scripts/deploy_frontend.sh '${local.repo_root}' '${aws_s3_bucket.receipt_scanner_website.bucket}' '${aws_api_gateway_stage.prod.invoke_url}'"
+  }
+
+  depends_on = [
+    aws_api_gateway_stage.prod,
+    aws_s3_bucket.receipt_scanner_website,
+    aws_s3_bucket.receipt_scanner_publicdata
+  ]
+}
