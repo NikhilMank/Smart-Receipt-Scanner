@@ -441,7 +441,7 @@ resource "aws_api_gateway_integration" "profile_put_lambda" { # Lambda Integrati
   http_method = aws_api_gateway_method.profile_put.http_method
   
   integration_http_method = "POST"
-  type                    = "AWS_PROXY"
+  type                    = "AWS"
   uri = aws_lambda_function.auth-api.invoke_arn 
 }
 resource "aws_api_gateway_method" "profile_options" { # /profile-OPTIONS(For CORS)
@@ -635,4 +635,8 @@ resource "aws_api_gateway_stage" "prod" {
   stage_name = "prod"
   rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
   deployment_id = aws_api_gateway_deployment.receipt-scanner-api.id
+}
+
+output "invoke_url" {
+  value = aws_api_gateway_stage.prod.invoke_url
 }
