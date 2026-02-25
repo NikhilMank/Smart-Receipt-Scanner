@@ -9,3 +9,8 @@ variable "project_name" {
   type        = string
   default     = "receipt-scanner"
 }
+
+variable "image_tag" {  # tag of the image to be deployed as lambda function
+  type = string
+  default = "latest"
+}
