@@ -48,7 +48,7 @@ resource "aws_iam_policy" "CognitoAndUsersTableAccess" {
                 "cognito-idp:AdminCreateUser",
                 "cognito-idp:AdminInitiateAuth"
             ],
-            "Resource": "arn:aws:cognito-idp:eu-central-1:*:userpool/eu-central-1_Eg9Fy4q8u"
+            "Resource": aws_cognito_user_pool.receipt_scanner.arn
         },
         {
             "Effect": "Allow",
@@ -92,3 +92,62 @@ resource "aws_iam_role_policy_attachment" "CognitoAndUsersTableAccess_attach" {
 #   role       = aws_iam_role.receipt-api-role.name
 #   policy_arn = aws_iam_policy.S3AccessPolicy.arn
 # }
+
+# Lambda trust policy
+data "aws_iam_policy_document" "lambda_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "receipt_scanner_lambda_role" {
+  name               = "ReceiptProcessor-role"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+}
+
+# 1) CloudWatchLogsFullAccess
+resource "aws_iam_role_policy_attachment" "lambda_cw_logs_full" {
+  role       = aws_iam_role.receipt_scanner_lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+}
+
+# 2) AmazonS3ReadOnlyAccess
+resource "aws_iam_role_policy_attachment" "lambda_s3_readonly" {
+  role       = aws_iam_role.receipt_scanner_lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+}
+
+# 3) AmazonDynamoDBFullAccess
+resource "aws_iam_role_policy_attachment" "lambda_dynamodb_full" {
+  role       = aws_iam_role.receipt_scanner_lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+}
+
+# 4) Custom role policy (your JSON as an inline policy)
+resource "aws_iam_role_policy" "lambda_custom_logs_policy" {
+  name = "receipt-processor-custom-logs"
+  role = aws_iam_role.receipt_scanner_lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "logs:CreateLogGroup"
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
