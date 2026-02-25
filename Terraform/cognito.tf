@@ -3,6 +3,10 @@ resource "aws_cognito_user_pool" "receipt_scanner" {
 
   auto_verified_attributes = ["email"]
   
+  lifecycle {
+    ignore_changes = [ schema ]
+  }
+  
   password_policy {
     minimum_length    = 8
     require_lowercase = true
