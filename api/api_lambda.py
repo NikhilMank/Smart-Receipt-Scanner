@@ -3,10 +3,15 @@ import boto3
 from decimal import Decimal
 from datetime import datetime, timedelta
 from boto3.dynamodb.conditions import Key, Attr
+import os
+
+USER_POOL_ID = os.getenv('COGNITO_USER_POOL_ID')
+CLIENT_ID = os.getenv('COGNITO_CLIENT_ID')
+S3_BUCKET = os.getenv('S3_BUCKET_NAME')
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('Receipts')
-users_table = dynamodb.Table('Users')
+table = dynamodb.Table(os.getenv('DYNAMODB_RECEIPTS_TABLE'))
+users_table = dynamodb.Table(os.getenv('DYNAMODB_USERS_TABLE'))
 
 def decimal_default(obj):
     """JSON serializer for Decimal objects"""
@@ -160,7 +165,7 @@ def register_user(event):
         cognito = boto3.client('cognito-idp')
         
         response = cognito.admin_create_user(
-            UserPoolId='eu-central-1_Eg9Fy4q8u',
+            UserPoolId=USER_POOL_ID,
             Username=email,
             UserAttributes=[
                 {'Name': 'email', 'Value': email},
@@ -172,7 +177,7 @@ def register_user(event):
         )
         
         cognito.admin_set_user_password(
-            UserPoolId='eu-central-1_Eg9Fy4q8u',
+            UserPoolId=USER_POOL_ID,
             Username=email,
             Password=password,
             Permanent=True
@@ -223,12 +228,11 @@ def login_user(event):
             }
         
         cognito = boto3.client('cognito-idp')
-        client_id = '3uuhcnuiae6t1lavii3vfdgjnp'
         
         try:
             response = cognito.admin_initiate_auth(
-                UserPoolId='eu-central-1_Eg9Fy4q8u',
-                ClientId=client_id,
+                UserPoolId=USER_POOL_ID,
+                ClientId=CLIENT_ID,
                 AuthFlow='ADMIN_USER_PASSWORD_AUTH',
                 AuthParameters={
                     'USERNAME': email,
@@ -694,12 +698,11 @@ def get_presigned_upload_url(event, user_id):
         unique_filename = f"receipts/{user_id}/{uuid.uuid4()}.{file_extension}"
         
         s3_client = boto3.client('s3')
-        bucket_name = 'receipt-scanner-publicstorage'
         
         presigned_url = s3_client.generate_presigned_url(
             'put_object',
             Params={
-                'Bucket': bucket_name,
+                'Bucket': S3_BUCKET,
                 'Key': unique_filename,
                 'ContentType': content_type
             },
@@ -712,7 +715,7 @@ def get_presigned_upload_url(event, user_id):
             'body': json.dumps({
                 'uploadUrl': presigned_url,
                 'key': unique_filename,
-                'bucket': bucket_name
+                'bucket': S3_BUCKET
             })
         }
         
