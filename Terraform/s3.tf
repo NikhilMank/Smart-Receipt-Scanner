@@ -121,12 +121,29 @@ resource "null_resource" "build_and_upload_frontend" {
 
   provisioner "local-exec" {
     interpreter = ["/usr/bin/env", "bash", "-lc"]
-    command = "${local.repo_root}/scripts/deploy_frontend.sh '${local.repo_root}' '${aws_s3_bucket.receipt_scanner_website.bucket}' '${aws_api_gateway_stage.prod.invoke_url}'"
+    command = "${local.repo_root}/scripts/deploy_frontend.sh '${local.repo_root}' '${aws_s3_bucket.frontend.bucket}' '${aws_api_gateway_stage.prod.invoke_url}'"
   }
 
   depends_on = [
     aws_api_gateway_stage.prod,
-    aws_s3_bucket.receipt_scanner_website,
-    aws_s3_bucket.receipt_scanner_publicdata
+    aws_s3_bucket.frontend,
+    aws_s3_bucket.public_storage
   ]
+}
+
+# Cross origin resource sharing configuration
+resource "aws_s3_bucket_cors_configuration" "public_storage_cors" {
+  bucket = aws_s3_bucket.public_storage.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT", "GET", "HEAD", "POST", "DELETE"]
+    allowed_origins = ["*"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+
+output "Website_url" {
+  value = aws_s3_bucket_website_configuration.frontend.website_endpoint
 }
