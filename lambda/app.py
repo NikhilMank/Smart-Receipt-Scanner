@@ -213,7 +213,7 @@ def lambda_handler(event, context):
     print(f"Processing file: {key} from bucket: {bucket}")
     
     # Validate bucket name
-    expected_bucket = 'receipt-scanner-publicstorage'
+    expected_bucket = os.environ.get('S3_BUCKET_NAME', 'receipt-scanner-publicstorage')
     if bucket != expected_bucket:
         print(f"Warning: Processing file from unexpected bucket: {bucket}, expected: {expected_bucket}")
 
