@@ -679,6 +679,7 @@ def get_presigned_upload_url(event, user_id):
     try:
         import boto3
         import uuid
+        from botocore.config import Config
         
         if not user_id or user_id == 'None':
             return {
@@ -696,8 +697,22 @@ def get_presigned_upload_url(event, user_id):
         
         file_extension = filename.split('.')[-1] if '.' in filename else 'jpg'
         unique_filename = f"receipts/{user_id}/{uuid.uuid4()}.{file_extension}"
+
+        region_name = (
+            os.environ.get('AWS_REGION')
+            or os.environ.get('AWS_DEFAULT_REGION')
+            or boto3.session.Session().region_name
+            or 'eu-central-1'
+        )
         
-        s3_client = boto3.client('s3')
+        s3_client = boto3.client(
+            's3',
+            region_name=region_name,
+            config=Config(
+                signature_version='s3v4',
+                s3={'addressing_style': 'virtual'}
+            )
+        )
         
         presigned_url = s3_client.generate_presigned_url(
             'put_object',
