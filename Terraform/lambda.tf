@@ -17,13 +17,32 @@ resource "aws_lambda_function" "receipt-api" {
     }
   }
 }
+
+resource "aws_lambda_permission" "apigw_get_profile_route" {
+  statement_id = "AllowAPIGatewayInvokeGETprofile"
+  action = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.receipt-api.function_name
+  principal = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.receipt_scanner.execution_arn}/*/GET/profile"
+}
+
+resource "aws_lambda_permission" "apigw_put_profile_route" {
+  statement_id = "AllowAPIGatewayInvokePUTprofile"
+  action = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.receipt-api.function_name
+  principal = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.receipt_scanner.execution_arn}/*/PUT/profile"
+}
+
 resource "aws_lambda_permission" "apigw_all_routes" {
   statement_id = "AllowAPIGatewayInvoleAll"
   action = "lambda:InvokeFunction"
   function_name = aws_lambda_function.receipt-api.function_name
   principal = "apigateway.amazonaws.com"
 
-  source_arn = "${aws_api_gateway_rest_api.receipt_scanner.execution_arn}/*/*/*"
+  source_arn = "${aws_api_gateway_rest_api.receipt_scanner.execution_arn}/*/*"
 }
 
 resource "aws_lambda_function" "receipt-ocr-container" {
@@ -43,4 +62,23 @@ resource "aws_lambda_function" "receipt-ocr-container" {
   }
 
   depends_on = [ null_resource.docker_build_and_push ]  # Ensure the image is built and pushed before creating the Lambda function
+}
+
+resource "aws_lambda_permission" "allow_s3_receipt_process" {
+  statement_id  = "AllowS3InvokeReceiptProcess"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.receipt-ocr-container.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.public_storage.arn
+}
+
+resource "aws_s3_bucket_notification" "receipt_process_notification" {
+  bucket = aws_s3_bucket.public_storage.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.receipt-ocr-container.arn
+    events              = ["s3:ObjectCreated:*"]
+  }
+
+  depends_on = [aws_lambda_permission.allow_s3_receipt_process]
 }

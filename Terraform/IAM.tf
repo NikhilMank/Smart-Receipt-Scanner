@@ -67,31 +67,30 @@ resource "aws_iam_role_policy_attachment" "CognitoAndUsersTableAccess_attach" {
   policy_arn = aws_iam_policy.CognitoAndUsersTableAccess.arn
 }
 
-# Custom Policy 2 .-- not necessary
-# resource "aws_iam_policy" "S3AccessPolicy" {
-#   name        = "S3AccessPolicy"
-#   description = "Custom policy 2 for Lambda"
+# Custom Policy 2 
+resource "aws_iam_policy" "S3AccessPolicy" {
+  name        = "S3AccessPolicy"
+  description = "Allow the API Lambda to sign and access receipt uploads in the app bucket"
 
-#   policy = jsonencode({
-#     "Version": "2012-10-17",
-#     "Statement": [
-#         {
-#             "Effect": "Allow",
-#             "Action": [
-#                 "s3:PutObject",
-#                 "s3:PutObjectAcl",
-#                 "s3:GetObject"
-#             ],
-#             "Resource": "*"
-#         }
-#     ]
-# })
-# }
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject"
+        ]
+        Resource = "${aws_s3_bucket.public_storage.arn}/*"
+      }
+    ]
+  })
+}
 
-# resource "aws_iam_role_policy_attachment" "S3AccessPolicy_attach" {
-#   role       = aws_iam_role.receipt-api-role.name
-#   policy_arn = aws_iam_policy.S3AccessPolicy.arn
-# }
+resource "aws_iam_role_policy_attachment" "S3AccessPolicy_attach" {
+  role       = aws_iam_role.receipt-api-role.name
+  policy_arn = aws_iam_policy.S3AccessPolicy.arn
+}
 
 # Lambda trust policy
 data "aws_iam_policy_document" "lambda_assume_role" {
