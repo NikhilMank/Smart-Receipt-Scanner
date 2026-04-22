@@ -174,14 +174,8 @@ A **cloud-native, multi-user receipt management system** that automatically extr
 
 ---
 
-## 📝 License
-
-This project is developed as part of a capstone project for educational purposes.
-
----
-
 ## 👨💻 Author
 
-Developed by **Nikhil** as part of the NeuFischer Full-Stack Development Program.
+Developed by **Nikhil Mankali**
 
 ---
