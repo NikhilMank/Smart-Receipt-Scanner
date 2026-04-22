@@ -44,6 +44,22 @@ resource "aws_lambda_permission" "apigw_all_routes" {
 
   source_arn = "${aws_api_gateway_rest_api.receipt_scanner.execution_arn}/*/*"
 }
+resource "aws_lambda_permission" "apigw_put_profile_route" {
+  statement_id = "AllowAPIGatewayInvoleProfilePUT"
+  action = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.receipt-api.function_name
+  principal = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.receipt_scanner.execution_arn}/*/PUT/profile"
+}
+resource "aws_lambda_permission" "apigw_get_profile_route" {
+  statement_id = "AllowAPIGatewayInvoleProfileGET"
+  action = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.receipt-api.function_name
+  principal = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.receipt_scanner.execution_arn}/*/GET/profile"
+}
 
 resource "aws_lambda_function" "receipt-ocr-container" {
   function_name = "receipt-ocr-container"

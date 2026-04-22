@@ -79,6 +79,7 @@ resource "aws_api_gateway_integration_response" "metrics_options" { # Integratio
   resource_id = aws_api_gateway_resource.metrics.id
   http_method = aws_api_gateway_method.metrics_options.http_method
   status_code = aws_api_gateway_method_response.metrics_options.status_code
+  depends_on = [ aws_api_gateway_integration.metrics_options ]
 
   response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = "'*'"
@@ -147,6 +148,7 @@ resource "aws_api_gateway_integration_response" "patterns_options" { # Integrati
   resource_id = aws_api_gateway_resource.patterns.id
   http_method = aws_api_gateway_method.patterns_options.http_method
   status_code = aws_api_gateway_method_response.patterns_options.status_code
+  depends_on = [ aws_api_gateway_integration.patterns_options ]
 
   response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = "'*'"
@@ -166,9 +168,9 @@ resource "aws_api_gateway_method" "monthly_get" { # /analytics/monthly-GET
   http_method = "GET"
   authorization = "COGNITO_USER_POOLS"
   authorizer_id = aws_api_gateway_authorizer.cognito.id
-  request_parameters = {
-    "method.request.header.Authorization" = true
-  }
+  # request_parameters = {
+  #   "method.request.header.Authorization" = true
+  # }
 }
 resource "aws_api_gateway_integration" "monthly_get_lambda" { # Lambda Integration for monthly-GET
   rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
@@ -184,6 +186,17 @@ resource "aws_api_gateway_method" "monthly_options" { # /analytics/monthly-OPTIO
   resource_id = aws_api_gateway_resource.monthly.id
   http_method = "OPTIONS"
   authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "monthly_options" { # Integration of OPTIONS /analytics/monthly with MOCK for CORS preflight
+  rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
+  resource_id = aws_api_gateway_resource.monthly.id
+  http_method = aws_api_gateway_method.monthly_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
 }
 resource "aws_api_gateway_method_response" "monthly_options" {  # Method Response for OPTIONS (CORS Headers)
   rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
@@ -202,6 +215,7 @@ resource "aws_api_gateway_integration_response" "monthly_options" { # Integratio
   resource_id = aws_api_gateway_resource.monthly.id
   http_method = aws_api_gateway_method.monthly_options.http_method
   status_code = aws_api_gateway_method_response.monthly_options.status_code
+  depends_on = [ aws_api_gateway_integration.monthly_get_lambda ]
 
   response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = "'*'"
@@ -222,9 +236,9 @@ resource "aws_api_gateway_method" "summary_get" { # /analytics/summary-GET
   http_method = "GET"
   authorization = "COGNITO_USER_POOLS"
   authorizer_id = aws_api_gateway_authorizer.cognito.id
-  request_parameters = {
-    "method.request.header.Authorization" = true
-  }
+  # request_parameters = {
+  #   "method.request.header.Authorization" = true
+  # }
 }
 resource "aws_api_gateway_integration" "summary_get_lambda" { # Lambda Integration for summary-GET
   rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
@@ -240,6 +254,17 @@ resource "aws_api_gateway_method" "summary_options" { # /analytics/summary-OPTIO
   resource_id = aws_api_gateway_resource.summary.id
   http_method = "OPTIONS"
   authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "summary_options" { # Integration of OPTIONS /analytics/summary with MOCK for CORS preflight
+  rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
+  resource_id = aws_api_gateway_resource.summary.id
+  http_method = aws_api_gateway_method.summary_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
 }
 resource "aws_api_gateway_method_response" "summary_options" { # Method Response for OPTIONS (CORS Headers)
   rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
@@ -258,6 +283,7 @@ resource "aws_api_gateway_integration_response" "summary_options" { # Integratio
   resource_id = aws_api_gateway_resource.summary.id
   http_method = aws_api_gateway_method.summary_options.http_method
   status_code = aws_api_gateway_method_response.summary_options.status_code
+  depends_on = [ aws_api_gateway_integration.summary_options ]
 
   response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = "'*'"
@@ -331,6 +357,7 @@ resource "aws_api_gateway_integration_response" "login_options" { # Integration 
   resource_id = aws_api_gateway_resource.login.id
   http_method = aws_api_gateway_method.login_options.http_method
   status_code = aws_api_gateway_method_response.login_options.status_code
+  depends_on = [ aws_api_gateway_integration.login_options ]
 
   response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = "'*'"
@@ -395,6 +422,7 @@ resource "aws_api_gateway_integration_response" "register_options" { # Integrati
   resource_id = aws_api_gateway_resource.register.id
   http_method = aws_api_gateway_method.register_options.http_method
   status_code = aws_api_gateway_method_response.register_options.status_code
+  depends_on  = [aws_api_gateway_integration.register_options]
 
   response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = "'*'"
@@ -416,9 +444,9 @@ resource "aws_api_gateway_method" "profile_get" { # /profile-GET
   http_method = "GET"
   authorization = "COGNITO_USER_POOLS"
   authorizer_id = aws_api_gateway_authorizer.cognito.id
-  request_parameters = {
-    "method.request.header.Authorization" = true  
-  }
+  # request_parameters = {
+  #   "method.request.header.Authorization" = true  
+  # }
 }
 resource "aws_api_gateway_integration" "profile_get_lambda" { # Lambda Integration for GET
   rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
@@ -433,7 +461,8 @@ resource "aws_api_gateway_method" "profile_put" { # /profile-PUT
   rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
   resource_id = aws_api_gateway_resource.profile.id
   http_method = "PUT"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
 }
 resource "aws_api_gateway_integration" "profile_put_lambda" { # Lambda Integration for PUT
   rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
@@ -441,7 +470,7 @@ resource "aws_api_gateway_integration" "profile_put_lambda" { # Lambda Integrati
   http_method = aws_api_gateway_method.profile_put.http_method
   
   integration_http_method = "POST"
-  type                    = "AWS"
+  type                    = "AWS_PROXY"
   uri = aws_lambda_function.auth-api.invoke_arn 
 }
 resource "aws_api_gateway_method" "profile_options" { # /profile-OPTIONS(For CORS)
@@ -449,6 +478,17 @@ resource "aws_api_gateway_method" "profile_options" { # /profile-OPTIONS(For COR
   resource_id = aws_api_gateway_resource.profile.id
   http_method = "OPTIONS"
   authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "profile_options" { # Integration of OPTIONS /profile with MOCK for CORS preflight
+    rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
+    resource_id = aws_api_gateway_resource.profile.id
+    http_method = aws_api_gateway_method.profile_options.http_method
+    type        = "MOCK"
+
+    request_templates = {
+      "application/json" = "{\"statusCode\": 200}"
+    }
 }
 resource "aws_api_gateway_method_response" "profile_options" { # Method Response for OPTIONS (CORS Headers)
   rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
@@ -467,6 +507,7 @@ resource "aws_api_gateway_integration_response" "profile_options" { # Integratio
   resource_id = aws_api_gateway_resource.profile.id
   http_method = aws_api_gateway_method.profile_options.http_method
   status_code = aws_api_gateway_method_response.profile_options.status_code
+  depends_on  = [aws_api_gateway_integration.profile_options]
 
   response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = "'*'"
@@ -487,9 +528,9 @@ resource "aws_api_gateway_method" "receipts_get" { # /receipts-GET
   http_method = "GET"
   authorization = "COGNITO_USER_POOLS"
   authorizer_id = aws_api_gateway_authorizer.cognito.id
-  request_parameters = {
-    "method.request.header.Authorization" = true
-  }
+  # request_parameters = {
+  #   "method.request.header.Authorization" = true
+  # }
 }
 resource "aws_api_gateway_integration" "receipts_get_lambda" { # Lambda Integration for GET
   rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
@@ -505,6 +546,17 @@ resource "aws_api_gateway_method" "receipts_options" { # /receipts-OPTIONS(For C
   resource_id = aws_api_gateway_resource.receipts.id
   http_method = "OPTIONS"
   authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "receipts_options" { # Integration of OPTIONS /receipts with MOCK for CORS preflight
+    rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
+    resource_id = aws_api_gateway_resource.receipts.id
+    http_method = aws_api_gateway_method.receipts_options.http_method
+    type        = "MOCK"
+
+    request_templates = {
+      "application/json" = "{\"statusCode\": 200}"
+    }
 }
 resource "aws_api_gateway_method_response" "receipts_options" { # Method Response for OPTIONS (CORS Headers)
   rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
@@ -523,6 +575,7 @@ resource "aws_api_gateway_integration_response" "receipts_options" { # Integrati
   resource_id = aws_api_gateway_resource.receipts.id
   http_method = aws_api_gateway_method.receipts_options.http_method
   status_code = aws_api_gateway_method_response.receipts_options.status_code
+  depends_on  = [aws_api_gateway_integration.receipts_options]
 
   response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = "'*'"
@@ -549,9 +602,9 @@ resource "aws_api_gateway_method" "presigned_url_post" { # /upload/presigned-url
   http_method = "POST"
   authorization = "COGNITO_USER_POOLS"
   authorizer_id = aws_api_gateway_authorizer.cognito.id
-  request_parameters = {
-    "method.request.header.Authorization" = true
-  }
+  # request_parameters = {
+  #   "method.request.header.Authorization" = true
+  # }
 }
 resource "aws_api_gateway_integration" "presigned_url_post_lambda" { # Lambda Integration for POST
   rest_api_id = aws_api_gateway_rest_api.receipt_scanner.id
@@ -598,6 +651,7 @@ resource "aws_api_gateway_integration_response" "presigned_url_options" { # Inte
   resource_id = aws_api_gateway_resource.presigned_url.id
   http_method = aws_api_gateway_method.presigned_url_options.http_method
   status_code = aws_api_gateway_method_response.presigned_url_options.status_code
+  depends_on  = [aws_api_gateway_integration.presigned_url_options]
 
   response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = "'*'"
